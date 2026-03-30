@@ -34,6 +34,12 @@ func Use[R any, D Deserializable[R], RR Serializable](
 			return err
 		}
 
+		if v, ok := any(req).(Validatable); ok {
+			if err := v.Validate(); err != nil {
+				return Error(400, err)
+			}
+		}
+
 		if err, res := h(ctx, req); err != nil {
 			return err
 		} else {

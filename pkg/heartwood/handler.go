@@ -14,4 +14,8 @@ type Deserializable[T any] interface {
 	Deserialize(r io.Reader) error
 }
 
+type Validatable interface {
+	Validate() error
+}
+
 type Handler[R any, D Deserializable[R], RR Serializable] func(ctx context.Context, req D) (error, RR)
