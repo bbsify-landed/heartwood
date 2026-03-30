@@ -81,6 +81,18 @@ func TestHTTPRequests(t *testing.T) {
 				Err:        "method not allowed",
 			},
 		},
+		&RequestTest[*Baz, hw.ClientError, *hw.ClientError]{
+			method: "POST",
+			target: "/health",
+			req: &Baz{
+				Ble: "Bob",
+			},
+			statusCode: 400,
+			res: &hw.ClientError{
+				StatusCode: 400,
+				Err:        "invalid json",
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
