@@ -90,7 +90,7 @@ func TestHTTPRequests(t *testing.T) {
 			statusCode: 400,
 			res: &hw.ClientError{
 				StatusCode: 400,
-				Err:        "invalid json",
+				Err:        "expected 'alice' in 'bar' field",
 			},
 		},
 	}
