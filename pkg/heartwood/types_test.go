@@ -32,6 +32,8 @@ func (f *Foo) Deserialize(r io.Reader) error {
 	return nil
 }
 
+func (f *Foo) Validate() error { return nil }
+
 type Baz struct {
 	Ble string `json:"ble"`
 }
@@ -53,6 +55,8 @@ func (b *Baz) Deserialize(r io.Reader) error {
 
 	return nil
 }
+
+func (b *Baz) Validate() error { return nil }
 
 func marshalReader[T any](v T) (error, io.Reader) {
 	if b, err := json.Marshal(v); err != nil {

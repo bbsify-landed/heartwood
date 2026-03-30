@@ -26,6 +26,8 @@ func (h *HealthCheckRequest) Deserialize(r io.Reader) error {
 	return nil
 }
 
+func (h *HealthCheckRequest) Validate() error { return nil }
+
 type HealthCheckResponse struct {
 	Healthy string `json:"healthy"`
 }

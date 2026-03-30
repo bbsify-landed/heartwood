@@ -21,6 +21,55 @@ var (
 	_ heartwood.App
 )
 
+// --- HealthCheck ---
+
+// HealthCheckRequest is the request type for POST /health.
+type HealthCheckRequest struct {
+	AreYouHealthy string `json:"are_you_healthy"`
+}
+
+func (r *HealthCheckRequest) Serialize(w io.Writer) error {
+	return json.NewEncoder(w).Encode(r)
+}
+
+func (r *HealthCheckRequest) Deserialize(rd io.Reader) error {
+	return json.NewDecoder(rd).Decode(r)
+}
+
+func (r *HealthCheckRequest) Validate() error {
+	var errs []string
+	if r.AreYouHealthy == "" {
+		errs = append(errs, "are_you_healthy is required")
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// HealthCheckResponse is the response type for POST /health.
+type HealthCheckResponse struct {
+	Healthy string `json:"healthy"`
+}
+
+func (r *HealthCheckResponse) Serialize(w io.Writer) error {
+	return json.NewEncoder(w).Encode(r)
+}
+
+func (r *HealthCheckResponse) Deserialize(rd io.Reader) error {
+	return json.NewDecoder(rd).Decode(r)
+}
+
+// HealthCheckHandler is the handler function type for POST /health.
+type HealthCheckHandler func(ctx context.Context, req *HealthCheckRequest) (error, *HealthCheckResponse)
+
+// RegisterHealthCheck registers the HealthCheck handler on the given app.
+func RegisterHealthCheck(app *heartwood.App, h HealthCheckHandler) {
+	heartwood.Use(app, "POST", "/health", func(ctx context.Context, req *HealthCheckRequest) (error, *HealthCheckResponse) {
+		return h(ctx, req)
+	})
+}
+
 // --- CreateUser ---
 
 // CreateUserRequest is the request type for POST /users.
@@ -86,55 +135,6 @@ type CreateUserHandler func(ctx context.Context, req *CreateUserRequest) (error,
 // RegisterCreateUser registers the CreateUser handler on the given app.
 func RegisterCreateUser(app *heartwood.App, h CreateUserHandler) {
 	heartwood.Use(app, "POST", "/users", func(ctx context.Context, req *CreateUserRequest) (error, *CreateUserResponse) {
-		return h(ctx, req)
-	})
-}
-
-// --- HealthCheck ---
-
-// HealthCheckRequest is the request type for POST /health.
-type HealthCheckRequest struct {
-	AreYouHealthy string `json:"are_you_healthy"`
-}
-
-func (r *HealthCheckRequest) Serialize(w io.Writer) error {
-	return json.NewEncoder(w).Encode(r)
-}
-
-func (r *HealthCheckRequest) Deserialize(rd io.Reader) error {
-	return json.NewDecoder(rd).Decode(r)
-}
-
-func (r *HealthCheckRequest) Validate() error {
-	var errs []string
-	if r.AreYouHealthy == "" {
-		errs = append(errs, "are_you_healthy is required")
-	}
-	if len(errs) > 0 {
-		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
-	}
-	return nil
-}
-
-// HealthCheckResponse is the response type for POST /health.
-type HealthCheckResponse struct {
-	Healthy string `json:"healthy"`
-}
-
-func (r *HealthCheckResponse) Serialize(w io.Writer) error {
-	return json.NewEncoder(w).Encode(r)
-}
-
-func (r *HealthCheckResponse) Deserialize(rd io.Reader) error {
-	return json.NewDecoder(rd).Decode(r)
-}
-
-// HealthCheckHandler is the handler function type for POST /health.
-type HealthCheckHandler func(ctx context.Context, req *HealthCheckRequest) (error, *HealthCheckResponse)
-
-// RegisterHealthCheck registers the HealthCheck handler on the given app.
-func RegisterHealthCheck(app *heartwood.App, h HealthCheckHandler) {
-	heartwood.Use(app, "POST", "/health", func(ctx context.Context, req *HealthCheckRequest) (error, *HealthCheckResponse) {
 		return h(ctx, req)
 	})
 }

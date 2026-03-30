@@ -48,3 +48,5 @@ func (e *ClientError) Deserialize(r io.Reader) error {
 	}
 	return nil
 }
+
+func (e *ClientError) Validate() error { return nil }

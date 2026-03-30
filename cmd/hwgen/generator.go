@@ -289,6 +289,8 @@ func (r *{{ .Name }}Request) Validate() error {
 	}
 	return nil
 }
+{{ else }}
+func (r *{{ .Name }}Request) Validate() error { return nil }
 {{ end }}
 // {{ .Name }}Response is the response type for {{ .Method }} {{ .Path }}.
 type {{ .Name }}Response struct {

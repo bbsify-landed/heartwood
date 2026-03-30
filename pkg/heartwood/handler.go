@@ -12,9 +12,6 @@ type Serializable interface {
 type Deserializable[T any] interface {
 	*T
 	Deserialize(r io.Reader) error
-}
-
-type Validatable interface {
 	Validate() error
 }
 
