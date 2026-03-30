@@ -37,7 +37,9 @@ func Use[R any, D Deserializable[R], RR Serializable](
 		if err, res := h(ctx, req); err != nil {
 			return err
 		} else {
-			res.Serialize(w)
+			if err := res.Serialize(w); err != nil {
+				return err
+			}
 
 			return nil
 		}
