@@ -65,9 +65,11 @@ func TestGenerateBasicSchema(t *testing.T) {
 	}
 
 	// Copy go.sum to avoid "updates to go.mod needed"
-	goSum, err := os.ReadFile(filepath.Join(modRoot, "go.sum"))
-	if err == nil {
-		_ = os.WriteFile(filepath.Join(outDir, "go.sum"), goSum, 0o644)
+	if goSum, err := os.ReadFile(filepath.Join(modRoot, "go.sum")); err == nil {
+		err = os.WriteFile(filepath.Join(outDir, "go.sum"), goSum, 0o644)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	cmd := exec.Command("go", "build", ".")
@@ -175,9 +177,11 @@ func TestRun(t *testing.T) {
 	}
 
 	// Copy go.sum
-	goSum, err := os.ReadFile(filepath.Join(modRoot, "go.sum"))
-	if err == nil {
-		_ = os.WriteFile(filepath.Join(outDir, "go.sum"), goSum, 0o644)
+	if goSum, err := os.ReadFile(filepath.Join(modRoot, "go.sum")); err == nil {
+		err = os.WriteFile(filepath.Join(outDir, "go.sum"), goSum, 0o644)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	var stdout, stderr bytes.Buffer
