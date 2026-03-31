@@ -2,7 +2,6 @@ package basic_test
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -77,7 +76,7 @@ func testApp() *hw.App {
 
 func TestHTTPRequests(t *testing.T) {
 	app := testApp()
-	ctx := context.Background()
+	ctx := t.Context()
 	mu := hw.NewServeMux(app, ctx)
 
 	testCases := []ReqTest{

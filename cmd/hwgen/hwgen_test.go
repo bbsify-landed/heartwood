@@ -25,7 +25,11 @@ func TestGenerateBasicSchema(t *testing.T) {
 		t.Fatalf("expected package name 'basic', got %q", pkgName)
 	}
 
-	outDir := t.TempDir()
+	// Create temp dir inside testdata to inherit heartwood module context
+	outDir := filepath.Join("testdata", "tmp-gen")
+	_ = os.MkdirAll(outDir, 0o755)
+	defer os.RemoveAll(outDir)
+
 	if err := generate(outDir, pkgName, defs); err != nil {
 		t.Fatalf("generate: %v", err)
 	}
@@ -49,18 +53,21 @@ func TestGenerateBasicSchema(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// We also need a go.mod file in the outDir to point back to the local heartwood
 	absPath, _ := filepath.Abs(".")
 	modRoot, _ := findModRoot(absPath)
 	goMod := "module test\n\ngo 1.25.0\n\nrequire github.com/bbsify-landed/heartwood v0.0.0\nreplace github.com/bbsify-landed/heartwood => " + modRoot + "\n"
 	_ = os.WriteFile(filepath.Join(outDir, "go.mod"), []byte(goMod), 0o644)
-
-	// Copy go.sum to satisfy dependencies
 	if goSum, err := os.ReadFile(filepath.Join(modRoot, "go.sum")); err == nil {
 		_ = os.WriteFile(filepath.Join(outDir, "go.sum"), goSum, 0o644)
 	}
 
-	cmd := exec.Command("go", "build", ".")
+	cmd := exec.Command("go", "mod", "tidy")
+	cmd.Dir = outDir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("go mod tidy failed: %v\n%s", err, out)
+	}
+
+	cmd = exec.Command("go", "build", ".")
 	cmd.Dir = outDir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -73,6 +80,27 @@ func TestGenerateBasicSchema(t *testing.T) {
 	}
 	if _, ok := defs["CreateUser"]; !ok {
 		t.Error("expected CreateUser definition")
+	}
+
+	// Verify HealthCheck definition
+	hc := defs["HealthCheck"]
+	if hc.Method != "POST" {
+		t.Errorf("HealthCheck.Method = %q, want POST", hc.Method)
+	}
+	if hc.Path != "/health" {
+		t.Errorf("HealthCheck.Path = %q, want /health", hc.Path)
+	}
+	if len(hc.ReqFields) != 1 {
+		t.Errorf("HealthCheck.ReqFields has %d fields, want 1", len(hc.ReqFields))
+	}
+
+	// Verify CreateUser definition
+	cu := defs["CreateUser"]
+	if len(cu.ReqFields) != 3 {
+		t.Errorf("CreateUser.ReqFields has %d fields, want 3", len(cu.ReqFields))
+	}
+	if len(cu.ResFields) != 4 {
+		t.Errorf("CreateUser.ResFields has %d fields, want 4", len(cu.ResFields))
 	}
 }
 
@@ -111,7 +139,10 @@ func TestLoadDefinitions_Errors(t *testing.T) {
 
 func TestRun(t *testing.T) {
 	testDir := filepath.Join("testdata", "basic")
-	outDir := t.TempDir()
+	// Create temp dir inside testdata to inherit heartwood module context
+	outDir := filepath.Join("testdata", "tmp-run")
+	_ = os.MkdirAll(outDir, 0o755)
+	defer os.RemoveAll(outDir)
 
 	// Copy schema.go to outDir so it can be loaded
 	schemaSrc, err := os.ReadFile(filepath.Join(testDir, "schema.go"))
@@ -121,15 +152,6 @@ func TestRun(t *testing.T) {
 	err = os.WriteFile(filepath.Join(outDir, "schema.go"), schemaSrc, 0o644)
 	if err != nil {
 		t.Fatal(err)
-	}
-
-	// Set up go.mod for TestRun as well
-	absPath, _ := filepath.Abs(".")
-	modRoot, _ := findModRoot(absPath)
-	goMod := "module testrun\n\ngo 1.25.0\n\nrequire github.com/bbsify-landed/heartwood v0.0.0\nreplace github.com/bbsify-landed/heartwood => " + modRoot + "\n"
-	_ = os.WriteFile(filepath.Join(outDir, "go.mod"), []byte(goMod), 0o644)
-	if goSum, err := os.ReadFile(filepath.Join(modRoot, "go.sum")); err == nil {
-		_ = os.WriteFile(filepath.Join(outDir, "go.sum"), goSum, 0o644)
 	}
 
 	var stdout, stderr bytes.Buffer

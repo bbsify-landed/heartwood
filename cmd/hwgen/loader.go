@@ -77,7 +77,7 @@ func loadDefinitions(dir string) (map[string]*schema.Definition, string, error) 
 	}
 
 	// Generate and run a temporary program to extract runtime values
-	defs, err := execExtractor(pkg.PkgPath, varNames, absDir)
+	defs, err := execExtractor(pkg.PkgPath, pkg.Name, varNames, absDir)
 	if err != nil {
 		return nil, "", err
 	}
@@ -87,7 +87,7 @@ func loadDefinitions(dir string) (map[string]*schema.Definition, string, error) 
 
 // execExtractor generates a temporary Go program that imports the user's
 // schema package, serializes the Definition variables to JSON, and runs it.
-func execExtractor(pkgPath string, varNames []string, schemaDir string) (map[string]*schema.Definition, error) {
+func execExtractor(pkgPath string, pkgName string, varNames []string, schemaDir string) (map[string]*schema.Definition, error) {
 	tmpDir, err := os.MkdirTemp("", "hwgen-*")
 	if err != nil {
 		return nil, fmt.Errorf("creating temp dir: %w", err)
@@ -142,14 +142,19 @@ func main() {
 	}
 
 	// Create a go.mod in the temp dir that requires and replaces the user's module
+	var extraModule string
+	if !strings.HasPrefix(pkgPath, "github.com/bbsify-landed/heartwood") && pkgPath != "main" && pkgPath != pkgName {
+		extraModule = fmt.Sprintf("\nrequire %s v0.0.0\nreplace %s => %s", pkgPath, pkgPath, schemaDir)
+	}
+
 	goMod := fmt.Sprintf(`module hwgen_extractor
 
 go 1.25.0
 
-require github.com/bbsify-landed/heartwood v0.0.0
+require github.com/bbsify-landed/heartwood v0.0.0%s
 
 replace github.com/bbsify-landed/heartwood => %s
-`, modRoot)
+`, extraModule, modRoot)
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte(goMod), 0o644); err != nil {
 		return nil, fmt.Errorf("writing temp go.mod: %w", err)
@@ -160,15 +165,17 @@ replace github.com/bbsify-landed/heartwood => %s
 		_ = os.WriteFile(filepath.Join(tmpDir, "go.sum"), goSum, 0o644)
 	}
 
-	// Also check if the user's package is in a different module
-	// For now, we assume the user's schema package is within the heartwood module
-
-	cmd := exec.Command("go", "run", ".")
+	cmd := exec.Command("go", "mod", "tidy")
 	cmd.Dir = tmpDir
-	cmd.Stderr = os.Stderr
-	out, err := cmd.Output()
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return nil, fmt.Errorf("tidy extractor: %v\n%s", err, string(out))
+	}
+
+	cmd = exec.Command("go", "run", ".")
+	cmd.Dir = tmpDir
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("running extractor: %w", err)
+		return nil, fmt.Errorf("running extractor: %v\n%s", err, string(out))
 	}
 
 	var defs map[string]*schema.Definition
