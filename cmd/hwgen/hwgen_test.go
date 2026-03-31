@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -187,11 +186,10 @@ func TestRun(t *testing.T) {
 
 	writeTestGoMod(t, outDir, "testrun")
 
-	var stdout, stderr bytes.Buffer
 	ctx := t.Context()
 
 	// Success
-	err = run(ctx, []string{"hwgen", outDir}, &stdout, &stderr)
+	err = run(ctx, []string{"hwgen", outDir})
 	assert.NoError(t, err)
 	// clog outputs to stderr by default, but we might need to capture it differently
 	// or just check that it didn't return an error since clog output is harder to capture
@@ -204,7 +202,7 @@ func TestRun(t *testing.T) {
 	err = os.WriteFile(filepath.Join(subDir, "schema.go"), []byte("package empty\n\ntype Foo struct{}"), 0o644)
 	assert.NoError(t, err)
 
-	err = run(ctx, []string{"hwgen", subDir}, &stdout, &stderr)
+	err = run(ctx, []string{"hwgen", subDir})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "no schema.Definition variables found")
 }

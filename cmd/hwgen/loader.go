@@ -192,14 +192,14 @@ func main() {
 }
 
 func getModuleInfo(dir string) (path, root string, err error) {
-	cmd := exec.Command("go", "list", "-m", "-f", "{{.Path}}:{{.Dir}}")
+	cmd := exec.Command("go", "list", "-m", "-f", "{{.Path}}|{{.Dir}}")
 	cmd.Dir = dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", "", fmt.Errorf("go list -m: %v\n%s", err, string(out))
 	}
 	s := strings.TrimSpace(string(out))
-	parts := strings.Split(s, ":")
+	parts := strings.Split(s, "|")
 	if len(parts) < 2 {
 		return "", "", fmt.Errorf("unexpected output from go list -m: %s", s)
 	}
