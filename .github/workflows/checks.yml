@@ -34,11 +34,12 @@ jobs:
 
       - name: Coverage
         run: |
-          go install github.com/vladopajic/go-test-coverage/v2/cmd/go-test-coverage@v2.18.4
+          go install github.com/vladopajic/go-test-coverage/v2@v2.11.0
+          export PATH=$PATH:$(go env GOPATH)/bin
           make coverage
 
       - name: Golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v2.1.6
+          version: v1.64.5
           install-mode: goinstall
