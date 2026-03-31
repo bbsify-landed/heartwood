@@ -62,14 +62,14 @@ func main() {
 		func(
 			ctx context.Context,
 			req *HealthCheckRequest,
-		) (error, *HealthCheckResponse) {
+		) (*HealthCheckResponse, error) {
 			if req.AreYouHealthy != "are you healthy?" {
-				return fmt.Errorf("expected 'are you healthy?' in field 'are_you_healthy'"), nil
+				return nil, fmt.Errorf("expected 'are you healthy?' in field 'are_you_healthy'")
 			}
 
-			return nil, &HealthCheckResponse{
+			return &HealthCheckResponse{
 				Healthy: "healthy",
-			}
+			}, nil
 		},
 	)
 

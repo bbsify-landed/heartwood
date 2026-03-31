@@ -15,4 +15,4 @@ type Deserializable[T any] interface {
 	Validate() error
 }
 
-type Handler[R any, D Deserializable[R], RR Serializable] func(ctx context.Context, req D) (error, RR)
+type Handler[R any, D Deserializable[R], RR Serializable] func(ctx context.Context, req D) (RR, error)

@@ -92,7 +92,7 @@ func execExtractor(pkgPath string, varNames []string, schemaDir string) (map[str
 	if err != nil {
 		return nil, fmt.Errorf("creating temp dir: %w", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Build the assignments: "HealthCheck": userschema.HealthCheck,
 	var assignments []string
@@ -101,36 +101,6 @@ func execExtractor(pkgPath string, varNames []string, schemaDir string) (map[str
 	}
 
 	src := fmt.Sprintf(`package main
-
-import (
-	"encoding/json"
-	"os"
-
-	userschema %q
-)
-
-func main() {
-	defs := map[string]*userschema.Definition__{
-%s
-	}
-
-	// Set names from var names
-	for name, def := range defs {
-		def.Name = name
-	}
-
-	if err := json.NewEncoder(os.Stdout).Encode(defs); err != nil {
-		os.Stderr.WriteString("hwgen extractor: " + err.Error() + "\n")
-		os.Exit(1)
-	}
-}
-`, pkgPath, strings.Join(assignments, "\n"))
-
-	// We can't reference the schema.Definition type directly from the user's
-	// package since it's a re-export. Instead, we need the user's package to
-	// use the schema package, and we reference the type through the schema package.
-	// Let's fix the source to use the correct type path.
-	src = fmt.Sprintf(`package main
 
 import (
 	"encoding/json"

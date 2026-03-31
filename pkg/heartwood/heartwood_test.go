@@ -14,7 +14,7 @@ import (
 func TestSimple(t *testing.T) {
 	app := SimpleApp()
 
-	err, r := marshalReader(&Foo{Bar: "alice"})
+	r, err := marshalReader(&Foo{Bar: "alice"})
 	require.Nil(t, err, err)
 
 	w := bytes.NewBuffer(nil)
@@ -33,7 +33,7 @@ func TestSimple(t *testing.T) {
 func TestSimpleError(t *testing.T) {
 	app := SimpleApp()
 
-	err, r := marshalReader(&Foo{Bar: "bob"})
+	r, err := marshalReader(&Foo{Bar: "bob"})
 	require.Nil(t, err, err)
 
 	w := bytes.NewBuffer(nil)

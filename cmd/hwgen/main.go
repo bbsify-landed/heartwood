@@ -20,7 +20,7 @@ func main() {
 		os.Exit(1)
 	}
 	for _, name := range []string{"hw_gen.go", "hw_client_gen.go"} {
-		os.Remove(filepath.Join(absDir, name))
+		_ = os.Remove(filepath.Join(absDir, name))
 	}
 
 	defs, pkgName, err := loadDefinitions(dir)

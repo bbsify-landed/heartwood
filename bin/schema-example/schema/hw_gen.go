@@ -63,11 +63,11 @@ func (r *HealthCheckResponse) Deserialize(rd io.Reader) error {
 func (r *HealthCheckResponse) Validate() error { return nil }
 
 // HealthCheckHandler is the handler function type for POST /health.
-type HealthCheckHandler func(ctx context.Context, req *HealthCheckRequest) (error, *HealthCheckResponse)
+type HealthCheckHandler func(ctx context.Context, req *HealthCheckRequest) (*HealthCheckResponse, error)
 
 // RegisterHealthCheck registers the HealthCheck handler on the given app.
 func RegisterHealthCheck(app *heartwood.App, h HealthCheckHandler) {
-	heartwood.Use(app, "POST", "/health", func(ctx context.Context, req *HealthCheckRequest) (error, *HealthCheckResponse) {
+	heartwood.Use(app, "POST", "/health", func(ctx context.Context, req *HealthCheckRequest) (*HealthCheckResponse, error) {
 		return h(ctx, req)
 	})
 }

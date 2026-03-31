@@ -310,11 +310,11 @@ func (r *{{ .Name }}Response) Deserialize(rd io.Reader) error {
 func (r *{{ .Name }}Response) Validate() error { return nil }
 
 // {{ .Name }}Handler is the handler function type for {{ .Method }} {{ .Path }}.
-type {{ .Name }}Handler func(ctx context.Context, req *{{ .Name }}Request) (error, *{{ .Name }}Response)
+type {{ .Name }}Handler func(ctx context.Context, req *{{ .Name }}Request) (*{{ .Name }}Response, error)
 
 // Register{{ .Name }} registers the {{ .Name }} handler on the given app.
 func Register{{ .Name }}(app *heartwood.App, h {{ .Name }}Handler) {
-	heartwood.Use(app, "{{ .Method }}", "{{ .Path }}", func(ctx context.Context, req *{{ .Name }}Request) (error, *{{ .Name }}Response) {
+	heartwood.Use(app, "{{ .Method }}", "{{ .Path }}", func(ctx context.Context, req *{{ .Name }}Request) (*{{ .Name }}Response, error) {
 		return h(ctx, req)
 	})
 }

@@ -12,7 +12,7 @@ func TestGenerateBasicSchema(t *testing.T) {
 
 	// Clean old generated files
 	for _, name := range []string{"hw_gen.go", "hw_client_gen.go"} {
-		os.Remove(filepath.Join(testDir, name))
+		_ = os.Remove(filepath.Join(testDir, name))
 	}
 
 	// Run the generator

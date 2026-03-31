@@ -38,15 +38,12 @@ func Use[R any, D Deserializable[R], RR Serializable](
 			return Error(400, err)
 		}
 
-		if err, res := h(ctx, req); err != nil {
+		res, err := h(ctx, req)
+		if err != nil {
 			return err
-		} else {
-			if err := res.Serialize(w); err != nil {
-				return err
-			}
-
-			return nil
 		}
+
+		return res.Serialize(w)
 	}
 }
 

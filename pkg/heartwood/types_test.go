@@ -58,12 +58,12 @@ func (b *Baz) Deserialize(r io.Reader) error {
 
 func (b *Baz) Validate() error { return nil }
 
-func marshalReader[T any](v T) (error, io.Reader) {
-	if b, err := json.Marshal(v); err != nil {
-		return err, nil
-	} else {
-		return nil, bytes.NewReader(b)
+func marshalReader[T any](v T) (io.Reader, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
 	}
+	return bytes.NewReader(b), nil
 }
 
 func SimpleApp() *hw.App {
@@ -72,14 +72,14 @@ func SimpleApp() *hw.App {
 		app,
 		"POST",
 		"/health",
-		func(ctx context.Context, req *Foo) (error, *Baz) {
+		func(ctx context.Context, req *Foo) (*Baz, error) {
 			if req.Bar != "alice" {
-				return hw.Error(400, errors.New("expected 'alice' in 'bar' field")), nil
+				return nil, hw.Error(400, errors.New("expected 'alice' in 'bar' field"))
 			}
 
-			return nil, &Baz{
+			return &Baz{
 				Ble: "bob",
-			}
+			}, nil
 		},
 	)
 	return app

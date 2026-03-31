@@ -83,11 +83,11 @@ func (r *CreateUserResponse) Deserialize(rd io.Reader) error {
 func (r *CreateUserResponse) Validate() error { return nil }
 
 // CreateUserHandler is the handler function type for POST /users.
-type CreateUserHandler func(ctx context.Context, req *CreateUserRequest) (error, *CreateUserResponse)
+type CreateUserHandler func(ctx context.Context, req *CreateUserRequest) (*CreateUserResponse, error)
 
 // RegisterCreateUser registers the CreateUser handler on the given app.
 func RegisterCreateUser(app *heartwood.App, h CreateUserHandler) {
-	heartwood.Use(app, "POST", "/users", func(ctx context.Context, req *CreateUserRequest) (error, *CreateUserResponse) {
+	heartwood.Use(app, "POST", "/users", func(ctx context.Context, req *CreateUserRequest) (*CreateUserResponse, error) {
 		return h(ctx, req)
 	})
 }
@@ -134,11 +134,11 @@ func (r *HealthCheckResponse) Deserialize(rd io.Reader) error {
 func (r *HealthCheckResponse) Validate() error { return nil }
 
 // HealthCheckHandler is the handler function type for POST /health.
-type HealthCheckHandler func(ctx context.Context, req *HealthCheckRequest) (error, *HealthCheckResponse)
+type HealthCheckHandler func(ctx context.Context, req *HealthCheckRequest) (*HealthCheckResponse, error)
 
 // RegisterHealthCheck registers the HealthCheck handler on the given app.
 func RegisterHealthCheck(app *heartwood.App, h HealthCheckHandler) {
-	heartwood.Use(app, "POST", "/health", func(ctx context.Context, req *HealthCheckRequest) (error, *HealthCheckResponse) {
+	heartwood.Use(app, "POST", "/health", func(ctx context.Context, req *HealthCheckRequest) (*HealthCheckResponse, error) {
 		return h(ctx, req)
 	})
 }

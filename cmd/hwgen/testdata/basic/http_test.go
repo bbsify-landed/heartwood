@@ -54,22 +54,22 @@ type ReqTest interface {
 func testApp() *hw.App {
 	app := hw.New()
 
-	basic.RegisterHealthCheck(app, func(ctx context.Context, req *basic.HealthCheckRequest) (error, *basic.HealthCheckResponse) {
+	basic.RegisterHealthCheck(app, func(ctx context.Context, req *basic.HealthCheckRequest) (*basic.HealthCheckResponse, error) {
 		if req.AreYouHealthy != "are you healthy?" {
-			return hw.Error(400, errors.New("expected 'are you healthy?' in 'are_you_healthy' field")), nil
+			return nil, hw.Error(400, errors.New("expected 'are you healthy?' in 'are_you_healthy' field"))
 		}
-		return nil, &basic.HealthCheckResponse{
+		return &basic.HealthCheckResponse{
 			Healthy: "healthy",
-		}
+		}, nil
 	})
 
-	basic.RegisterCreateUser(app, func(ctx context.Context, req *basic.CreateUserRequest) (error, *basic.CreateUserResponse) {
-		return nil, &basic.CreateUserResponse{
+	basic.RegisterCreateUser(app, func(ctx context.Context, req *basic.CreateUserRequest) (*basic.CreateUserResponse, error) {
+		return &basic.CreateUserResponse{
 			Id:    "usr_123",
 			Name:  req.Name,
 			Email: req.Email,
 			Age:   req.Age,
-		}
+		}, nil
 	})
 
 	return app

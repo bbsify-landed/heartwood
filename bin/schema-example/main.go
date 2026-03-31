@@ -20,13 +20,13 @@ func main() {
 
 	app := hw.New()
 
-	s.RegisterHealthCheck(app, func(ctx context.Context, req *s.HealthCheckRequest) (error, *s.HealthCheckResponse) {
+	s.RegisterHealthCheck(app, func(ctx context.Context, req *s.HealthCheckRequest) (*s.HealthCheckResponse, error) {
 		if req.AreYouHealthy != "are you healthy?" {
-			return fmt.Errorf("expected 'are you healthy?' in field 'are_you_healthy'"), nil
+			return nil, fmt.Errorf("expected 'are you healthy?' in field 'are_you_healthy'")
 		}
-		return nil, &s.HealthCheckResponse{
+		return &s.HealthCheckResponse{
 			Healthy: "healthy",
-		}
+		}, nil
 	})
 
 	if err := hw.ListenAndServe(app, ctx, ":9000"); err != nil {
