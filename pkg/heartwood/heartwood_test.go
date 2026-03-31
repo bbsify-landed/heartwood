@@ -23,7 +23,7 @@ func TestSimple(t *testing.T) {
 
 	w := bytes.NewBuffer(nil)
 
-	ctx := t.Context()
+	ctx := context.Background()
 	err = hw.Handle(app, ctx, "POST", "/health", r, w)
 	require.Nil(t, err, err)
 
@@ -42,7 +42,7 @@ func TestSimpleError(t *testing.T) {
 
 	w := bytes.NewBuffer(nil)
 
-	ctx := t.Context()
+	ctx := context.Background()
 	err = hw.Handle(app, ctx, "POST", "/health", r, w)
 
 	var hwError *hw.HeartwoodError
@@ -88,7 +88,7 @@ func TestNewServeMux_Errors(t *testing.T) {
 		return nil, io.EOF
 	})
 
-	mux := hw.NewServeMux(app, t.Context())
+	mux := hw.NewServeMux(app, context.Background())
 
 	tests := []struct {
 		name       string
@@ -152,7 +152,7 @@ func (fw *failWriter) WriteHeader(int)           {}
 
 func TestNewServeMux_SerializationError(t *testing.T) {
 	app := SimpleApp()
-	mux := hw.NewServeMux(app, t.Context())
+	mux := hw.NewServeMux(app, context.Background())
 
 	// Trigger an error that will be serialized, then fail the serialization
 	r := httptest.NewRequest("POST", "/health", bytes.NewBufferString(`{"bar":"bob"}`))
@@ -166,6 +166,6 @@ func TestNewServeMux_SerializationError(t *testing.T) {
 func TestListenAndServe_Error(t *testing.T) {
 	app := SimpleApp()
 	// An invalid address to cause ListenAndServe to fail.
-	err := hw.ListenAndServe(app, t.Context(), "invalid:address")
+	err := hw.ListenAndServe(app, context.Background(), "invalid:address")
 	assert.Error(t, err)
 }

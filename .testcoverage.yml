@@ -5,7 +5,7 @@ local-prefix: github.com/bbsify-landed/heartwood
 threshold:
   file: 0
   package: 0
-  total: 65
+  total: 85
 
 exclude:
   paths:
@@ -15,7 +15,7 @@ exclude:
 override:
   - threshold: 100
     path: ^pkg/schema
-  - threshold: 50
+  - threshold: 90
     path: ^pkg/heartwood
-  - threshold: 50
+  - threshold: 80
     path: ^cmd/hwgen

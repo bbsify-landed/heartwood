@@ -21,77 +21,6 @@ var (
 	_ heartwood.App
 )
 
-// --- CreateUser ---
-
-// CreateUserRequest is the request type for POST /users.
-type CreateUserRequest struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Age   int    `json:"age"`
-}
-
-func (r *CreateUserRequest) Serialize(w io.Writer) error {
-	return json.NewEncoder(w).Encode(r)
-}
-
-func (r *CreateUserRequest) Deserialize(rd io.Reader) error {
-	return json.NewDecoder(rd).Decode(r)
-}
-
-func (r *CreateUserRequest) Validate() error {
-	var errs []string
-	if r.Name == "" {
-		errs = append(errs, "name is required")
-	}
-	if len(r.Name) < 1 {
-		errs = append(errs, "name must be at least 1 characters")
-	}
-	if len(r.Name) > 100 {
-		errs = append(errs, "name must be at most 100 characters")
-	}
-	if r.Email == "" {
-		errs = append(errs, "email is required")
-	}
-	if float64(r.Age) < 0 {
-		errs = append(errs, "age must be at least 0")
-	}
-	if float64(r.Age) > 150 {
-		errs = append(errs, "age must be at most 150")
-	}
-	if len(errs) > 0 {
-		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
-	}
-	return nil
-}
-
-// CreateUserResponse is the response type for POST /users.
-type CreateUserResponse struct {
-	Id    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Age   int    `json:"age"`
-}
-
-func (r *CreateUserResponse) Serialize(w io.Writer) error {
-	return json.NewEncoder(w).Encode(r)
-}
-
-func (r *CreateUserResponse) Deserialize(rd io.Reader) error {
-	return json.NewDecoder(rd).Decode(r)
-}
-
-func (r *CreateUserResponse) Validate() error { return nil }
-
-// CreateUserHandler is the handler function type for POST /users.
-type CreateUserHandler func(ctx context.Context, req *CreateUserRequest) (*CreateUserResponse, error)
-
-// RegisterCreateUser registers the CreateUser handler on the given app.
-func RegisterCreateUser(app *heartwood.App, h CreateUserHandler) {
-	heartwood.Use(app, "POST", "/users", func(ctx context.Context, req *CreateUserRequest) (*CreateUserResponse, error) {
-		return h(ctx, req)
-	})
-}
-
 // --- HealthCheck ---
 
 // HealthCheckRequest is the request type for POST /health.
@@ -220,6 +149,77 @@ type ComplexValidationHandler func(ctx context.Context, req *ComplexValidationRe
 // RegisterComplexValidation registers the ComplexValidation handler on the given app.
 func RegisterComplexValidation(app *heartwood.App, h ComplexValidationHandler) {
 	heartwood.Use(app, "POST", "/complex", func(ctx context.Context, req *ComplexValidationRequest) (*ComplexValidationResponse, error) {
+		return h(ctx, req)
+	})
+}
+
+// --- CreateUser ---
+
+// CreateUserRequest is the request type for POST /users.
+type CreateUserRequest struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Age   int    `json:"age"`
+}
+
+func (r *CreateUserRequest) Serialize(w io.Writer) error {
+	return json.NewEncoder(w).Encode(r)
+}
+
+func (r *CreateUserRequest) Deserialize(rd io.Reader) error {
+	return json.NewDecoder(rd).Decode(r)
+}
+
+func (r *CreateUserRequest) Validate() error {
+	var errs []string
+	if r.Name == "" {
+		errs = append(errs, "name is required")
+	}
+	if len(r.Name) < 1 {
+		errs = append(errs, "name must be at least 1 characters")
+	}
+	if len(r.Name) > 100 {
+		errs = append(errs, "name must be at most 100 characters")
+	}
+	if r.Email == "" {
+		errs = append(errs, "email is required")
+	}
+	if float64(r.Age) < 0 {
+		errs = append(errs, "age must be at least 0")
+	}
+	if float64(r.Age) > 150 {
+		errs = append(errs, "age must be at most 150")
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// CreateUserResponse is the response type for POST /users.
+type CreateUserResponse struct {
+	Id    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Age   int    `json:"age"`
+}
+
+func (r *CreateUserResponse) Serialize(w io.Writer) error {
+	return json.NewEncoder(w).Encode(r)
+}
+
+func (r *CreateUserResponse) Deserialize(rd io.Reader) error {
+	return json.NewDecoder(rd).Decode(r)
+}
+
+func (r *CreateUserResponse) Validate() error { return nil }
+
+// CreateUserHandler is the handler function type for POST /users.
+type CreateUserHandler func(ctx context.Context, req *CreateUserRequest) (*CreateUserResponse, error)
+
+// RegisterCreateUser registers the CreateUser handler on the given app.
+func RegisterCreateUser(app *heartwood.App, h CreateUserHandler) {
+	heartwood.Use(app, "POST", "/users", func(ctx context.Context, req *CreateUserRequest) (*CreateUserResponse, error) {
 		return h(ctx, req)
 	})
 }

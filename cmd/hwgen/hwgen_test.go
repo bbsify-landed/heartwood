@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,11 +13,7 @@ import (
 
 func TestGenerateBasicSchema(t *testing.T) {
 	testDir := filepath.Join("testdata", "basic")
-
-	// Clean old generated files
-	for _, name := range []string{"hw_gen.go", "hw_client_gen.go"} {
-		_ = os.Remove(filepath.Join(testDir, name))
-	}
+	outDir := t.TempDir()
 
 	// Run the generator
 	defs, pkgName, err := loadDefinitions(testDir)
@@ -30,30 +27,51 @@ func TestGenerateBasicSchema(t *testing.T) {
 		t.Fatalf("expected package name 'basic', got %q", pkgName)
 	}
 
-	if err := generate(testDir, pkgName, defs); err != nil {
+	if err := generate(outDir, pkgName, defs); err != nil {
 		t.Fatalf("generate: %v", err)
 	}
 
 	// Verify the generated files exist
 	for _, name := range []string{"hw_gen.go", "hw_client_gen.go"} {
-		path := filepath.Join(testDir, name)
+		path := filepath.Join(outDir, name)
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			t.Errorf("expected generated file %s to exist", name)
 		}
 	}
 
-	// Verify the generated package compiles
-	absDir, _ := filepath.Abs(testDir)
-	cmd := exec.Command("go", "build", "./...")
-	cmd.Dir = absDir
+	// To verify the generated package compiles, we need to copy the original
+	// schema.go to the same directory as the generated files.
+	schemaSrc, err := os.ReadFile(filepath.Join(testDir, "schema.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.WriteFile(filepath.Join(outDir, "schema.go"), schemaSrc, 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	// Need to set GOPATH context by running from module root
+	// We also need a go.mod file in the outDir so it's a valid module
+	// that can find the heartwood dependency.
+	absDir, _ := filepath.Abs(".")
 	modRoot, err := findModRoot(absDir)
 	if err != nil {
 		t.Fatalf("findModRoot: %v", err)
 	}
-	cmd = exec.Command("go", "build", "./cmd/hwgen/testdata/basic/")
-	cmd.Dir = modRoot
+
+	goMod := fmt.Sprintf("module test\n\ngo 1.25.0\n\nrequire github.com/bbsify-landed/heartwood v0.0.0\n\nreplace github.com/bbsify-landed/heartwood => %s\n", modRoot)
+	err = os.WriteFile(filepath.Join(outDir, "go.mod"), []byte(goMod), 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Copy go.sum to avoid "updates to go.mod needed"
+	goSum, err := os.ReadFile(filepath.Join(modRoot, "go.sum"))
+	if err == nil {
+		_ = os.WriteFile(filepath.Join(outDir, "go.sum"), goSum, 0o644)
+	}
+
+	cmd := exec.Command("go", "build", ".")
+	cmd.Dir = outDir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("generated code does not compile: %v\n%s", err, out)
@@ -131,10 +149,41 @@ func TestLoadDefinitions_Errors(t *testing.T) {
 
 func TestRun(t *testing.T) {
 	testDir := filepath.Join("testdata", "basic")
+	outDir := t.TempDir()
+
+	// Copy schema.go to outDir so it can be loaded
+	schemaSrc, err := os.ReadFile(filepath.Join(testDir, "schema.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.WriteFile(filepath.Join(outDir, "schema.go"), schemaSrc, 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// We also need a go.mod file in the outDir
+	absDir, _ := filepath.Abs(".")
+	modRoot, err := findModRoot(absDir)
+	if err != nil {
+		t.Fatalf("findModRoot: %v", err)
+	}
+
+	goMod := fmt.Sprintf("module testrun\n\ngo 1.25.0\n\nrequire github.com/bbsify-landed/heartwood v0.0.0\n\nreplace github.com/bbsify-landed/heartwood => %s\n", modRoot)
+	err = os.WriteFile(filepath.Join(outDir, "go.mod"), []byte(goMod), 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Copy go.sum
+	goSum, err := os.ReadFile(filepath.Join(modRoot, "go.sum"))
+	if err == nil {
+		_ = os.WriteFile(filepath.Join(outDir, "go.sum"), goSum, 0o644)
+	}
+
 	var stdout, stderr bytes.Buffer
 
 	// Success
-	err := run([]string{"hwgen", testDir}, &stdout, &stderr)
+	err = run([]string{"hwgen", outDir}, &stdout, &stderr)
 	assert.NoError(t, err)
 	assert.Contains(t, stderr.String(), "generated 3 endpoint(s)")
 

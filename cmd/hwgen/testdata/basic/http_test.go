@@ -77,7 +77,7 @@ func testApp() *hw.App {
 
 func TestHTTPRequests(t *testing.T) {
 	app := testApp()
-	ctx := t.Context()
+	ctx := context.Background()
 	mu := hw.NewServeMux(app, ctx)
 
 	testCases := []ReqTest{
