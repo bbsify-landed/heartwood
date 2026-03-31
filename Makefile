@@ -12,7 +12,7 @@ test: generate
 .PHONY: coverage
 coverage: generate
 	go test $(PACKAGES) -coverprofile=coverage.out -timeout 60s
-	go tool cover -func=coverage.out
+	go-test-coverage --config .testcoverage.yml
 
 .PHONY: vet
 vet:

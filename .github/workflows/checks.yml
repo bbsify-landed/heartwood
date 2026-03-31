@@ -34,17 +34,11 @@ jobs:
 
       - name: Coverage
         run: |
+          go install github.com/vladopajic/go-test-coverage/v2/cmd/go-test-coverage@v2.18.4
           make coverage
-          COVERAGE=$(go tool cover -func=coverage.out | grep ^total | awk '{print $NF}' | tr -d '%')
-          echo "Total coverage: ${COVERAGE}%"
-          THRESHOLD=65
-          if [ "$(echo "$COVERAGE < $THRESHOLD" | bc)" -eq 1 ]; then
-            echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
-            exit 1
-          fi
 
       - name: Golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v2.1.6
           install-mode: goinstall
