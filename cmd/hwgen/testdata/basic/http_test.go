@@ -1,6 +1,7 @@
 package basic_test
 
 import (
+	"context"
 	"bytes"
 	"errors"
 	"fmt"

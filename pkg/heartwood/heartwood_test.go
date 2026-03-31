@@ -91,11 +91,12 @@ func TestNewServeMux_Errors(t *testing.T) {
 	mux := hw.NewServeMux(app, t.Context())
 
 	tests := []struct {
-		name       string
-		method     string
-		path       string
-		body       string
-		wantStatus int
+		name          string
+		method        string
+		path          string
+		body          string
+		wantStatus    int
+		wantBodyMatch string
 	}{
 		{
 			name:       "Path not found",
@@ -105,18 +106,20 @@ func TestNewServeMux_Errors(t *testing.T) {
 			wantStatus: 404,
 		},
 		{
-			name:       "Method not allowed",
-			method:     "GET",
-			path:       "/health",
-			body:       `{"bar":"alice"}`,
-			wantStatus: 405,
+			name:          "Method not allowed",
+			method:        "GET",
+			path:          "/health",
+			body:          `{"bar":"alice"}`,
+			wantStatus:    405,
+			wantBodyMatch: "method not allowed",
 		},
 		{
-			name:       "Generic error (500)",
-			method:     "POST",
-			path:       "/error",
-			body:       `{"bar":"alice"}`,
-			wantStatus: 500,
+			name:          "Generic error (500)",
+			method:        "POST",
+			path:          "/error",
+			body:          `{"bar":"alice"}`,
+			wantStatus:    500,
+			wantBodyMatch: "internal server error",
 		},
 		{
 			name:       "IO EOF",
@@ -126,11 +129,12 @@ func TestNewServeMux_Errors(t *testing.T) {
 			wantStatus: 200, // ServeMux treats io.EOF as success (client dropped)
 		},
 		{
-			name:       "Invalid Request Body",
-			method:     "POST",
-			path:       "/health",
-			body:       `{invalid}`,
-			wantStatus: 500,
+			name:          "Invalid Request Body",
+			method:        "POST",
+			path:          "/health",
+			body:          `{invalid}`,
+			wantStatus:    500,
+			wantBodyMatch: "internal server error",
 		},
 	}
 
@@ -140,6 +144,9 @@ func TestNewServeMux_Errors(t *testing.T) {
 			r := httptest.NewRequest(tt.method, tt.path, bytes.NewBufferString(tt.body))
 			mux.ServeHTTP(w, r)
 			assert.Equal(t, tt.wantStatus, w.Code)
+			if tt.wantBodyMatch != "" {
+				assert.Contains(t, w.Body.String(), tt.wantBodyMatch)
+			}
 		})
 	}
 }

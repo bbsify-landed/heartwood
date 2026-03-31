@@ -77,7 +77,7 @@ func loadDefinitions(dir string) (map[string]*schema.Definition, string, error) 
 	}
 
 	// Generate and run a temporary program to extract runtime values
-	defs, err := execExtractor(pkg.PkgPath, pkg.Name, varNames, absDir)
+	defs, err := execExtractor(pkg.PkgPath, varNames, absDir)
 	if err != nil {
 		return nil, "", err
 	}
@@ -87,7 +87,7 @@ func loadDefinitions(dir string) (map[string]*schema.Definition, string, error) 
 
 // execExtractor generates a temporary Go program that imports the user's
 // schema package, serializes the Definition variables to JSON, and runs it.
-func execExtractor(pkgPath string, pkgName string, varNames []string, schemaDir string) (map[string]*schema.Definition, error) {
+func execExtractor(pkgPath string, varNames []string, schemaDir string) (map[string]*schema.Definition, error) {
 	tmpDir, err := os.MkdirTemp("", "hwgen-*")
 	if err != nil {
 		return nil, fmt.Errorf("creating temp dir: %w", err)
@@ -134,34 +134,39 @@ func main() {
 		return nil, fmt.Errorf("writing temp main.go: %w", err)
 	}
 
-	// Find the module root (directory containing go.mod) so we can set up
-	// a go.work or use replace directives.
-	modRoot, err := findModRoot(schemaDir)
+	// Robust module resolution
+	userModPath, userModDir, err := getModuleInfo(schemaDir)
 	if err != nil {
-		return nil, fmt.Errorf("finding module root: %w", err)
+		return nil, err
 	}
 
-	// Create a go.mod in the temp dir that requires and replaces the user's module
-	var extraModule string
-	if !strings.HasPrefix(pkgPath, "github.com/bbsify-landed/heartwood") && pkgPath != "main" && pkgPath != pkgName {
-		extraModule = fmt.Sprintf("\nrequire %s v0.0.0\nreplace %s => %s", pkgPath, pkgPath, schemaDir)
+	hwModPath := "github.com/bbsify-landed/heartwood"
+	hwModDir, _ := getModDir(hwModPath, schemaDir)
+
+	replaces := map[string]string{
+		userModPath: userModDir,
+	}
+	if hwModDir != "" {
+		replaces[hwModPath] = hwModDir
 	}
 
-	goMod := fmt.Sprintf(`module hwgen_extractor
+	var sb strings.Builder
+	sb.WriteString("module hwgen_extractor\n\ngo 1.25.0\n\nrequire (\n")
+	for path := range replaces {
+		sb.WriteString(fmt.Sprintf("\t%s v0.0.0\n", path))
+	}
+	sb.WriteString(")\n\nreplace (\n")
+	for path, dir := range replaces {
+		sb.WriteString(fmt.Sprintf("\t%s => %s\n", path, dir))
+	}
+	sb.WriteString(")\n")
 
-go 1.25.0
-
-require github.com/bbsify-landed/heartwood v0.0.0%s
-
-replace github.com/bbsify-landed/heartwood => %s
-`, extraModule, modRoot)
-
-	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte(goMod), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte(sb.String()), 0o644); err != nil {
 		return nil, fmt.Errorf("writing temp go.mod: %w", err)
 	}
 
-	// Copy go.sum if it exists to satisfy dependencies like clog
-	if goSum, err := os.ReadFile(filepath.Join(modRoot, "go.sum")); err == nil {
+	// Copy go.sum if it exists
+	if goSum, err := os.ReadFile(filepath.Join(userModDir, "go.sum")); err == nil {
 		_ = os.WriteFile(filepath.Join(tmpDir, "go.sum"), goSum, 0o644)
 	}
 
@@ -184,6 +189,31 @@ replace github.com/bbsify-landed/heartwood => %s
 	}
 
 	return defs, nil
+}
+
+func getModuleInfo(dir string) (path, root string, err error) {
+	cmd := exec.Command("go", "list", "-m", "-f", "{{.Path}}:{{.Dir}}")
+	cmd.Dir = dir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", "", fmt.Errorf("go list -m: %v\n%s", err, string(out))
+	}
+	s := strings.TrimSpace(string(out))
+	parts := strings.Split(s, ":")
+	if len(parts) < 2 {
+		return "", "", fmt.Errorf("unexpected output from go list -m: %s", s)
+	}
+	return parts[0], parts[1], nil
+}
+
+func getModDir(modName string, searchDir string) (string, error) {
+	cmd := exec.Command("go", "list", "-m", "-f", "{{.Dir}}", modName)
+	cmd.Dir = searchDir
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
 }
 
 // findModRoot walks up from dir looking for go.mod.

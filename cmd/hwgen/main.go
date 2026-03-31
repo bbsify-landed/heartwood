@@ -1,20 +1,24 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/bbsify-landed/clog"
 )
 
 func main() {
-	if err := run(os.Args, os.Stdout, os.Stderr); err != nil {
-		fmt.Fprintf(os.Stderr, "hwgen: %v\n", err)
+	ctx := context.Background()
+	if err := run(ctx, os.Args, os.Stdout, os.Stderr); err != nil {
+		clog.Error(ctx, "hwgen failed", "err", err)
 		os.Exit(1)
 	}
 }
 
-func run(args []string, stdout, stderr io.Writer) error {
+func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	dir := "."
 	if len(args) > 1 {
 		dir = args[1]
@@ -43,6 +47,6 @@ func run(args []string, stdout, stderr io.Writer) error {
 		return err
 	}
 
-	fmt.Fprintf(stderr, "hwgen: generated %d endpoint(s)\n", len(defs))
+	clog.Info(ctx, "generated endpoints", "count", len(defs))
 	return nil
 }
