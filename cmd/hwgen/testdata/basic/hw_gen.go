@@ -21,138 +21,6 @@ var (
 	_ heartwood.App
 )
 
-// --- HealthCheck ---
-
-// HealthCheckRequest is the request type for POST /health.
-type HealthCheckRequest struct {
-	AreYouHealthy string `json:"are_you_healthy"`
-}
-
-func (r *HealthCheckRequest) Serialize(w io.Writer) error {
-	return json.NewEncoder(w).Encode(r)
-}
-
-func (r *HealthCheckRequest) Deserialize(rd io.Reader) error {
-	return json.NewDecoder(rd).Decode(r)
-}
-
-func (r *HealthCheckRequest) Validate() error {
-	var errs []string
-	if r.AreYouHealthy == "" {
-		errs = append(errs, "are_you_healthy is required")
-	}
-	if len(errs) > 0 {
-		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
-	}
-	return nil
-}
-
-// HealthCheckResponse is the response type for POST /health.
-type HealthCheckResponse struct {
-	Healthy string `json:"healthy"`
-}
-
-func (r *HealthCheckResponse) Serialize(w io.Writer) error {
-	return json.NewEncoder(w).Encode(r)
-}
-
-func (r *HealthCheckResponse) Deserialize(rd io.Reader) error {
-	return json.NewDecoder(rd).Decode(r)
-}
-
-func (r *HealthCheckResponse) Validate() error { return nil }
-
-// HealthCheckHandler is the handler function type for POST /health.
-type HealthCheckHandler func(ctx context.Context, req *HealthCheckRequest) (*HealthCheckResponse, error)
-
-// RegisterHealthCheck registers the HealthCheck handler on the given app.
-func RegisterHealthCheck(app *heartwood.App, h HealthCheckHandler) {
-	heartwood.Use(app, "POST", "/health", func(ctx context.Context, req *HealthCheckRequest) (*HealthCheckResponse, error) {
-		return h(ctx, req)
-	})
-}
-
-// --- ComplexValidation ---
-
-// ComplexValidationRequest is the request type for POST /complex.
-type ComplexValidationRequest struct {
-	SReq  string   `json:"s_req"`
-	IVal  int      `json:"i_val"`
-	FVal  float64  `json:"f_val"`
-	SlVal []string `json:"sl_val"`
-}
-
-func (r *ComplexValidationRequest) Serialize(w io.Writer) error {
-	return json.NewEncoder(w).Encode(r)
-}
-
-func (r *ComplexValidationRequest) Deserialize(rd io.Reader) error {
-	return json.NewDecoder(rd).Decode(r)
-}
-
-func (r *ComplexValidationRequest) Validate() error {
-	var errs []string
-	if r.SReq == "" {
-		errs = append(errs, "s_req is required")
-	}
-	if len(r.SReq) < 5 {
-		errs = append(errs, "s_req must be at least 5 characters")
-	}
-	if len(r.SReq) > 10 {
-		errs = append(errs, "s_req must be at most 10 characters")
-	}
-	if float64(r.IVal) < 10 {
-		errs = append(errs, "i_val must be at least 10")
-	}
-	if float64(r.IVal) > 20 {
-		errs = append(errs, "i_val must be at most 20")
-	}
-	if float64(r.FVal) < 1.5 {
-		errs = append(errs, "f_val must be at least 1.5")
-	}
-	if float64(r.FVal) > 2.5 {
-		errs = append(errs, "f_val must be at most 2.5")
-	}
-	if len(r.SlVal) == 0 {
-		errs = append(errs, "sl_val is required")
-	}
-	if len(r.SlVal) < 1 {
-		errs = append(errs, "sl_val must have at least 1 items")
-	}
-	if len(r.SlVal) > 3 {
-		errs = append(errs, "sl_val must have at most 3 items")
-	}
-	if len(errs) > 0 {
-		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
-	}
-	return nil
-}
-
-// ComplexValidationResponse is the response type for POST /complex.
-type ComplexValidationResponse struct {
-	Success bool `json:"success"`
-}
-
-func (r *ComplexValidationResponse) Serialize(w io.Writer) error {
-	return json.NewEncoder(w).Encode(r)
-}
-
-func (r *ComplexValidationResponse) Deserialize(rd io.Reader) error {
-	return json.NewDecoder(rd).Decode(r)
-}
-
-func (r *ComplexValidationResponse) Validate() error { return nil }
-
-// ComplexValidationHandler is the handler function type for POST /complex.
-type ComplexValidationHandler func(ctx context.Context, req *ComplexValidationRequest) (*ComplexValidationResponse, error)
-
-// RegisterComplexValidation registers the ComplexValidation handler on the given app.
-func RegisterComplexValidation(app *heartwood.App, h ComplexValidationHandler) {
-	heartwood.Use(app, "POST", "/complex", func(ctx context.Context, req *ComplexValidationRequest) (*ComplexValidationResponse, error) {
-		return h(ctx, req)
-	})
-}
-
 // --- CreateUser ---
 
 // CreateUserRequest is the request type for POST /users.
@@ -220,6 +88,57 @@ type CreateUserHandler func(ctx context.Context, req *CreateUserRequest) (*Creat
 // RegisterCreateUser registers the CreateUser handler on the given app.
 func RegisterCreateUser(app *heartwood.App, h CreateUserHandler) {
 	heartwood.Use(app, "POST", "/users", func(ctx context.Context, req *CreateUserRequest) (*CreateUserResponse, error) {
+		return h(ctx, req)
+	})
+}
+
+// --- HealthCheck ---
+
+// HealthCheckRequest is the request type for POST /health.
+type HealthCheckRequest struct {
+	AreYouHealthy string `json:"are_you_healthy"`
+}
+
+func (r *HealthCheckRequest) Serialize(w io.Writer) error {
+	return json.NewEncoder(w).Encode(r)
+}
+
+func (r *HealthCheckRequest) Deserialize(rd io.Reader) error {
+	return json.NewDecoder(rd).Decode(r)
+}
+
+func (r *HealthCheckRequest) Validate() error {
+	var errs []string
+	if r.AreYouHealthy == "" {
+		errs = append(errs, "are_you_healthy is required")
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// HealthCheckResponse is the response type for POST /health.
+type HealthCheckResponse struct {
+	Healthy string `json:"healthy"`
+}
+
+func (r *HealthCheckResponse) Serialize(w io.Writer) error {
+	return json.NewEncoder(w).Encode(r)
+}
+
+func (r *HealthCheckResponse) Deserialize(rd io.Reader) error {
+	return json.NewDecoder(rd).Decode(r)
+}
+
+func (r *HealthCheckResponse) Validate() error { return nil }
+
+// HealthCheckHandler is the handler function type for POST /health.
+type HealthCheckHandler func(ctx context.Context, req *HealthCheckRequest) (*HealthCheckResponse, error)
+
+// RegisterHealthCheck registers the HealthCheck handler on the given app.
+func RegisterHealthCheck(app *heartwood.App, h HealthCheckHandler) {
+	heartwood.Use(app, "POST", "/health", func(ctx context.Context, req *HealthCheckRequest) (*HealthCheckResponse, error) {
 		return h(ctx, req)
 	})
 }

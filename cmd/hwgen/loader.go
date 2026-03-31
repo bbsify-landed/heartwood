@@ -142,30 +142,26 @@ func main() {
 	}
 
 	// Create a go.mod in the temp dir that requires and replaces the user's module
-	var extraReplace string
-	var extraRequire string
-	if !strings.HasPrefix(pkgPath, "github.com/bbsify-landed/heartwood") && pkgPath != "main" {
-		extraRequire = fmt.Sprintf("\nrequire %s v0.0.0", pkgPath)
-		extraReplace = fmt.Sprintf("\nreplace %s => %s", pkgPath, schemaDir)
-	}
-
 	goMod := fmt.Sprintf(`module hwgen_extractor
 
 go 1.25.0
 
-require github.com/bbsify-landed/heartwood v0.0.0%s
+require github.com/bbsify-landed/heartwood v0.0.0
 
-replace github.com/bbsify-landed/heartwood => %s%s
-`, extraRequire, modRoot, extraReplace)
+replace github.com/bbsify-landed/heartwood => %s
+`, modRoot)
 
 	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte(goMod), 0o644); err != nil {
 		return nil, fmt.Errorf("writing temp go.mod: %w", err)
 	}
 
-	// Copy go.sum if it exists to satisfy dependencies of heartwood (like clog)
+	// Copy go.sum if it exists
 	if goSum, err := os.ReadFile(filepath.Join(modRoot, "go.sum")); err == nil {
 		_ = os.WriteFile(filepath.Join(tmpDir, "go.sum"), goSum, 0o644)
 	}
+
+	// Also check if the user's package is in a different module
+	// For now, we assume the user's schema package is within the heartwood module
 
 	cmd := exec.Command("go", "run", ".")
 	cmd.Dir = tmpDir

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -50,27 +49,8 @@ func TestGenerateBasicSchema(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// We also need a go.mod file in the outDir so it's a valid module
-	// that can find the heartwood dependency.
-	absDir, _ := filepath.Abs(".")
-	modRoot, err := findModRoot(absDir)
-	if err != nil {
-		t.Fatalf("findModRoot: %v", err)
-	}
-
-	goMod := fmt.Sprintf("module test\n\ngo 1.25.0\n\nrequire github.com/bbsify-landed/heartwood v0.0.0\n\nreplace github.com/bbsify-landed/heartwood => %s\n", modRoot)
-	err = os.WriteFile(filepath.Join(outDir, "go.mod"), []byte(goMod), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Copy go.sum to avoid "updates to go.mod needed"
-	if goSum, err := os.ReadFile(filepath.Join(modRoot, "go.sum")); err == nil {
-		err = os.WriteFile(filepath.Join(outDir, "go.sum"), goSum, 0o644)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
+	// We also need a go.mod file in the outDir
+	_ = os.WriteFile(filepath.Join(outDir, "go.mod"), []byte("module test\n\ngo 1.25.0\n"), 0o644)
 
 	cmd := exec.Command("go", "build", ".")
 	cmd.Dir = outDir
@@ -119,15 +99,13 @@ func TestLoadDefinitions_Errors(t *testing.T) {
 	})
 
 	t.Run("No Go Files", func(t *testing.T) {
-		tmpDir, _ := os.MkdirTemp("", "hwgen-test-*")
-		defer os.RemoveAll(tmpDir)
+		tmpDir := t.TempDir()
 		_, _, err := loadDefinitions(tmpDir)
 		assert.Error(t, err)
 	})
 
 	t.Run("Compilation Error", func(t *testing.T) {
-		tmpDir, _ := os.MkdirTemp("", "hwgen-test-*")
-		defer os.RemoveAll(tmpDir)
+		tmpDir := t.TempDir()
 		err := os.WriteFile(filepath.Join(tmpDir, "schema.go"), []byte("package bad\n\nimport \"fmt\"\n\nfunc main() { fmt.Println(undefined) }"), 0o644)
 		assert.NoError(t, err)
 		_, _, err = loadDefinitions(tmpDir)
@@ -164,25 +142,7 @@ func TestRun(t *testing.T) {
 	}
 
 	// We also need a go.mod file in the outDir
-	absDir, _ := filepath.Abs(".")
-	modRoot, err := findModRoot(absDir)
-	if err != nil {
-		t.Fatalf("findModRoot: %v", err)
-	}
-
-	goMod := fmt.Sprintf("module testrun\n\ngo 1.25.0\n\nrequire github.com/bbsify-landed/heartwood v0.0.0\n\nreplace github.com/bbsify-landed/heartwood => %s\n", modRoot)
-	err = os.WriteFile(filepath.Join(outDir, "go.mod"), []byte(goMod), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Copy go.sum
-	if goSum, err := os.ReadFile(filepath.Join(modRoot, "go.sum")); err == nil {
-		err = os.WriteFile(filepath.Join(outDir, "go.sum"), goSum, 0o644)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
+	_ = os.WriteFile(filepath.Join(outDir, "go.mod"), []byte("module testrun\n\ngo 1.25.0\n"), 0o644)
 
 	var stdout, stderr bytes.Buffer
 

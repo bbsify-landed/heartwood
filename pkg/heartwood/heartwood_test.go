@@ -102,7 +102,7 @@ func TestNewServeMux_Errors(t *testing.T) {
 			method:     "POST",
 			path:       "/not-found",
 			body:       `{"bar":"alice"}`,
-			wantStatus: 404, // mux.ServeHTTP returns 404 for unknown paths
+			wantStatus: 404,
 		},
 		{
 			name:       "Method not allowed",
@@ -130,7 +130,7 @@ func TestNewServeMux_Errors(t *testing.T) {
 			method:     "POST",
 			path:       "/health",
 			body:       `{invalid}`,
-			wantStatus: 500, // Handle returns a generic error on deserialize failure, which NewServeMux turns into 500
+			wantStatus: 500,
 		},
 	}
 
@@ -158,8 +158,6 @@ func TestNewServeMux_SerializationError(t *testing.T) {
 	r := httptest.NewRequest("POST", "/health", bytes.NewBufferString(`{"bar":"bob"}`))
 	w := &failWriter{}
 
-	// This won't panic but we expect it to log (which we aren't easily checking here)
-	// We just want to cover the branch where Serialize(w) fails
 	mux.ServeHTTP(w, r)
 }
 

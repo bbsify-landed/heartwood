@@ -2,7 +2,6 @@ package heartwood_test
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -55,7 +54,7 @@ type ReqTest interface {
 
 func TestHTTPRequests(t *testing.T) {
 	app := SimpleApp()
-	ctx := context.Background()
+	ctx := t.Context()
 	mu := hw.NewServeMux(app, ctx)
 
 	testCases := []ReqTest{
