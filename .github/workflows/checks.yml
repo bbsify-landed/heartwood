@@ -27,10 +27,21 @@ jobs:
         run: go mod verify
 
       - name: Vet
-        run: go vet ./...
+        run: make vet
 
       - name: Test
-        run: go test -v ./...
+        run: make test
+
+      - name: Coverage
+        run: |
+          make coverage
+          COVERAGE=$(go tool cover -func=coverage.out | grep ^total | awk '{print $NF}' | tr -d '%')
+          echo "Total coverage: ${COVERAGE}%"
+          THRESHOLD=65
+          if [ "$(echo "$COVERAGE < $THRESHOLD" | bc)" -eq 1 ]; then
+            echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
+            exit 1
+          fi
 
       - name: Golangci-lint
         uses: golangci/golangci-lint-action@v6
