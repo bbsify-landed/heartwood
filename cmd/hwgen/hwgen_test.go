@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const goModTmpl = `module {{.Name}}
@@ -22,27 +23,27 @@ replace github.com/bbsify-landed/heartwood => {{.ModRoot}}
 func writeTestGoMod(t *testing.T, dir string, name string) {
 	t.Helper()
 	absPath, err := filepath.Abs(".")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	modRoot, err := findModRoot(absPath)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	tmpl, err := template.New("gomod").Parse(goModTmpl)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	f, err := os.Create(filepath.Join(dir, "go.mod"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer f.Close()
 
 	err = tmpl.Execute(f, map[string]string{
 		"Name":    name,
 		"ModRoot": modRoot,
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Copy go.sum if it exists
 	if goSum, err := os.ReadFile(filepath.Join(modRoot, "go.sum")); err == nil {
 		err = os.WriteFile(filepath.Join(dir, "go.sum"), goSum, 0o644)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 }
 
