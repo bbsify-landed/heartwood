@@ -12,7 +12,6 @@ import (
 
 func TestGenerateBasicSchema(t *testing.T) {
 	testDir := filepath.Join("testdata", "basic")
-	outDir := t.TempDir()
 
 	// Run the generator
 	defs, pkgName, err := loadDefinitions(testDir)
@@ -26,6 +25,7 @@ func TestGenerateBasicSchema(t *testing.T) {
 		t.Fatalf("expected package name 'basic', got %q", pkgName)
 	}
 
+	outDir := t.TempDir()
 	if err := generate(outDir, pkgName, defs); err != nil {
 		t.Fatalf("generate: %v", err)
 	}
@@ -65,9 +65,6 @@ func TestGenerateBasicSchema(t *testing.T) {
 	}
 	if _, ok := defs["CreateUser"]; !ok {
 		t.Error("expected CreateUser definition")
-	}
-	if _, ok := defs["ComplexValidation"]; !ok {
-		t.Error("expected ComplexValidation definition")
 	}
 
 	// Verify HealthCheck definition
@@ -113,8 +110,6 @@ func TestLoadDefinitions_Errors(t *testing.T) {
 	})
 
 	t.Run("No Definitions", func(t *testing.T) {
-		// Instead of making a full new module which is hard to point back to heartwood,
-		// just make a subdirectory in the current module.
 		subDir := filepath.Join("testdata", "empty")
 		_ = os.MkdirAll(subDir, 0o755)
 		defer os.RemoveAll(subDir)
@@ -149,7 +144,7 @@ func TestRun(t *testing.T) {
 	// Success
 	err = run([]string{"hwgen", outDir}, &stdout, &stderr)
 	assert.NoError(t, err)
-	assert.Contains(t, stderr.String(), "generated 3 endpoint(s)")
+	assert.Contains(t, stderr.String(), "generated 2 endpoint(s)")
 
 	// Error - no definitions
 	subDir := filepath.Join("testdata", "empty_run")

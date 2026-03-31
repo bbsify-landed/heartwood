@@ -155,7 +155,7 @@ replace github.com/bbsify-landed/heartwood => %s
 		return nil, fmt.Errorf("writing temp go.mod: %w", err)
 	}
 
-	// Copy go.sum if it exists
+	// Copy go.sum if it exists to satisfy dependencies like clog
 	if goSum, err := os.ReadFile(filepath.Join(modRoot, "go.sum")); err == nil {
 		_ = os.WriteFile(filepath.Join(tmpDir, "go.sum"), goSum, 0o644)
 	}
