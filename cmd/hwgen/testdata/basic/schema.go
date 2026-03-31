@@ -26,3 +26,16 @@ var CreateUser = schema.Define(
 		schema.Int("age"),
 	),
 )
+
+var ComplexValidation = schema.Define(
+	schema.POST("/complex"),
+	schema.Request(
+		schema.String("s_req").Required().MinLength(5).MaxLength(10),
+		schema.Int("i_val").MinValue(10).MaxValue(20),
+		schema.Float64("f_val").MinValue(1.5).MaxValue(2.5),
+		schema.Slice("sl_val", schema.StringType).Required().MinLength(1).MaxLength(3),
+	),
+	schema.Response(
+		schema.Bool("success"),
+	),
+)

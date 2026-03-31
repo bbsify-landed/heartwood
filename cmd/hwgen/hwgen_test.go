@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGenerateBasicSchema(t *testing.T) {
@@ -63,6 +66,9 @@ func TestGenerateBasicSchema(t *testing.T) {
 	if _, ok := defs["CreateUser"]; !ok {
 		t.Error("expected CreateUser definition")
 	}
+	if _, ok := defs["ComplexValidation"]; !ok {
+		t.Error("expected ComplexValidation definition")
+	}
 
 	// Verify HealthCheck definition
 	hc := defs["HealthCheck"]
@@ -84,4 +90,59 @@ func TestGenerateBasicSchema(t *testing.T) {
 	if len(cu.ResFields) != 4 {
 		t.Errorf("CreateUser.ResFields has %d fields, want 4", len(cu.ResFields))
 	}
+}
+
+func TestLoadDefinitions_Errors(t *testing.T) {
+	t.Run("Invalid Directory", func(t *testing.T) {
+		_, _, err := loadDefinitions("/non/existent/path")
+		assert.Error(t, err)
+	})
+
+	t.Run("No Go Files", func(t *testing.T) {
+		tmpDir, _ := os.MkdirTemp("", "hwgen-test-*")
+		defer os.RemoveAll(tmpDir)
+		_, _, err := loadDefinitions(tmpDir)
+		assert.Error(t, err)
+	})
+
+	t.Run("Compilation Error", func(t *testing.T) {
+		tmpDir, _ := os.MkdirTemp("", "hwgen-test-*")
+		defer os.RemoveAll(tmpDir)
+		os.WriteFile(filepath.Join(tmpDir, "schema.go"), []byte("package bad\n\nimport \"fmt\"\n\nfunc main() { fmt.Println(undefined) }"), 0o644)
+		_, _, err := loadDefinitions(tmpDir)
+		assert.Error(t, err)
+	})
+
+	t.Run("No Definitions", func(t *testing.T) {
+		// Instead of making a full new module which is hard to point back to heartwood,
+		// just make a subdirectory in the current module.
+		subDir := filepath.Join("testdata", "empty")
+		_ = os.MkdirAll(subDir, 0o755)
+		defer os.RemoveAll(subDir)
+		os.WriteFile(filepath.Join(subDir, "schema.go"), []byte("package empty\n\ntype Foo struct{}"), 0o644)
+
+		defs, _, err := loadDefinitions(subDir)
+		assert.NoError(t, err)
+		assert.Empty(t, defs)
+	})
+}
+
+func TestRun(t *testing.T) {
+	testDir := filepath.Join("testdata", "basic")
+	var stdout, stderr bytes.Buffer
+
+	// Success
+	err := run([]string{"hwgen", testDir}, &stdout, &stderr)
+	assert.NoError(t, err)
+	assert.Contains(t, stderr.String(), "generated 3 endpoint(s)")
+
+	// Error - no definitions
+	subDir := filepath.Join("testdata", "empty_run")
+	_ = os.MkdirAll(subDir, 0o755)
+	defer os.RemoveAll(subDir)
+	os.WriteFile(filepath.Join(subDir, "schema.go"), []byte("package empty\n\ntype Foo struct{}"), 0o644)
+
+	err = run([]string{"hwgen", subDir}, &stdout, &stderr)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no schema.Definition variables found")
 }
