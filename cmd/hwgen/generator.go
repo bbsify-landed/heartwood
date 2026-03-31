@@ -307,6 +307,8 @@ func (r *{{ .Name }}Response) Deserialize(rd io.Reader) error {
 	return json.NewDecoder(rd).Decode(r)
 }
 
+func (r *{{ .Name }}Response) Validate() error { return nil }
+
 // {{ .Name }}Handler is the handler function type for {{ .Method }} {{ .Path }}.
 type {{ .Name }}Handler func(ctx context.Context, req *{{ .Name }}Request) (error, *{{ .Name }}Response)
 

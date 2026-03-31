@@ -60,6 +60,8 @@ func (r *HealthCheckResponse) Deserialize(rd io.Reader) error {
 	return json.NewDecoder(rd).Decode(r)
 }
 
+func (r *HealthCheckResponse) Validate() error { return nil }
+
 // HealthCheckHandler is the handler function type for POST /health.
 type HealthCheckHandler func(ctx context.Context, req *HealthCheckRequest) (error, *HealthCheckResponse)
 
