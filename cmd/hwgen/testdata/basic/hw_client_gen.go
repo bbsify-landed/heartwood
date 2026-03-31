@@ -33,41 +33,6 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
-// ComplexValidation calls POST /complex.
-func (c *Client) ComplexValidation(ctx context.Context, req *ComplexValidationRequest) (*ComplexValidationResponse, error) {
-	var body bytes.Buffer
-	if err := req.Serialize(&body); err != nil {
-		return nil, fmt.Errorf("serializing request: %w", err)
-	}
-
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", c.BaseURL+"/complex", &body)
-	if err != nil {
-		return nil, fmt.Errorf("creating request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	httpRes, err := c.HTTPClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("executing request: %w", err)
-	}
-	defer httpRes.Body.Close()
-
-	if httpRes.StatusCode >= 400 {
-		var clientErr ClientError
-		if err := json.NewDecoder(httpRes.Body).Decode(&clientErr); err != nil {
-			return nil, fmt.Errorf("server returned status %d", httpRes.StatusCode)
-		}
-		clientErr.StatusCode = httpRes.StatusCode
-		return nil, &clientErr
-	}
-
-	res := &ComplexValidationResponse{}
-	if err := res.Deserialize(httpRes.Body); err != nil {
-		return nil, fmt.Errorf("deserializing response: %w", err)
-	}
-	return res, nil
-}
-
 // CreateUser calls POST /users.
 func (c *Client) CreateUser(ctx context.Context, req *CreateUserRequest) (*CreateUserResponse, error) {
 	var body bytes.Buffer
@@ -132,6 +97,41 @@ func (c *Client) HealthCheck(ctx context.Context, req *HealthCheckRequest) (*Hea
 	}
 
 	res := &HealthCheckResponse{}
+	if err := res.Deserialize(httpRes.Body); err != nil {
+		return nil, fmt.Errorf("deserializing response: %w", err)
+	}
+	return res, nil
+}
+
+// ComplexValidation calls POST /complex.
+func (c *Client) ComplexValidation(ctx context.Context, req *ComplexValidationRequest) (*ComplexValidationResponse, error) {
+	var body bytes.Buffer
+	if err := req.Serialize(&body); err != nil {
+		return nil, fmt.Errorf("serializing request: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", c.BaseURL+"/complex", &body)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	httpRes, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("executing request: %w", err)
+	}
+	defer httpRes.Body.Close()
+
+	if httpRes.StatusCode >= 400 {
+		var clientErr ClientError
+		if err := json.NewDecoder(httpRes.Body).Decode(&clientErr); err != nil {
+			return nil, fmt.Errorf("server returned status %d", httpRes.StatusCode)
+		}
+		clientErr.StatusCode = httpRes.StatusCode
+		return nil, &clientErr
+	}
+
+	res := &ComplexValidationResponse{}
 	if err := res.Deserialize(httpRes.Body); err != nil {
 		return nil, fmt.Errorf("deserializing response: %w", err)
 	}

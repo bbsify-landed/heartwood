@@ -108,8 +108,9 @@ func TestLoadDefinitions_Errors(t *testing.T) {
 	t.Run("Compilation Error", func(t *testing.T) {
 		tmpDir, _ := os.MkdirTemp("", "hwgen-test-*")
 		defer os.RemoveAll(tmpDir)
-		os.WriteFile(filepath.Join(tmpDir, "schema.go"), []byte("package bad\n\nimport \"fmt\"\n\nfunc main() { fmt.Println(undefined) }"), 0o644)
-		_, _, err := loadDefinitions(tmpDir)
+		err := os.WriteFile(filepath.Join(tmpDir, "schema.go"), []byte("package bad\n\nimport \"fmt\"\n\nfunc main() { fmt.Println(undefined) }"), 0o644)
+		assert.NoError(t, err)
+		_, _, err = loadDefinitions(tmpDir)
 		assert.Error(t, err)
 	})
 
@@ -119,7 +120,8 @@ func TestLoadDefinitions_Errors(t *testing.T) {
 		subDir := filepath.Join("testdata", "empty")
 		_ = os.MkdirAll(subDir, 0o755)
 		defer os.RemoveAll(subDir)
-		os.WriteFile(filepath.Join(subDir, "schema.go"), []byte("package empty\n\ntype Foo struct{}"), 0o644)
+		err := os.WriteFile(filepath.Join(subDir, "schema.go"), []byte("package empty\n\ntype Foo struct{}"), 0o644)
+		assert.NoError(t, err)
 
 		defs, _, err := loadDefinitions(subDir)
 		assert.NoError(t, err)
@@ -140,7 +142,8 @@ func TestRun(t *testing.T) {
 	subDir := filepath.Join("testdata", "empty_run")
 	_ = os.MkdirAll(subDir, 0o755)
 	defer os.RemoveAll(subDir)
-	os.WriteFile(filepath.Join(subDir, "schema.go"), []byte("package empty\n\ntype Foo struct{}"), 0o644)
+	err = os.WriteFile(filepath.Join(subDir, "schema.go"), []byte("package empty\n\ntype Foo struct{}"), 0o644)
+	assert.NoError(t, err)
 
 	err = run([]string{"hwgen", subDir}, &stdout, &stderr)
 	assert.Error(t, err)
