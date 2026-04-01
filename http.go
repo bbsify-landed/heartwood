@@ -22,7 +22,8 @@ func NewServeMux(app *App, ctx context.Context) *http.ServeMux {
 
 	for path := range app.handlers {
 		clog.Info(ctx, "registering", "path", path)
-		mu.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+
+		var h http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			err := Handle(app, ctx, r.Method, path, r.Body, w)
 
 			var hwErr *HeartwoodError
@@ -41,6 +42,13 @@ func NewServeMux(app *App, ctx context.Context) *http.ServeMux {
 				}
 			}
 		})
+
+		// Apply middleware in reverse so the first registered runs outermost.
+		for i := len(app.middleware) - 1; i >= 0; i-- {
+			h = app.middleware[i](h)
+		}
+
+		mu.Handle(path, h)
 	}
 
 	return mu

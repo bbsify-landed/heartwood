@@ -14,14 +14,21 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net/http"
 )
 
 type handler func(ctx context.Context, r io.Reader, w io.Writer) error
 
+// Middleware wraps an [http.Handler], following the standard Go middleware
+// convention. Middleware registered with [App.With] is applied to every
+// route when [NewServeMux] builds the serve mux.
+type Middleware func(http.Handler) http.Handler
+
 // App is the central registry for heartwood handlers. Create one with [New]
 // and register handlers with [Use].
 type App struct {
-	handlers map[string]map[string]handler
+	handlers   map[string]map[string]handler
+	middleware []Middleware
 }
 
 // New creates a new [App] with an empty handler registry.
@@ -29,6 +36,13 @@ func New() *App {
 	return &App{
 		handlers: map[string]map[string]handler{},
 	}
+}
+
+// With adds middleware to the app. Middleware is applied in the order added,
+// so the first middleware registered is the outermost wrapper (runs first on
+// the way in, last on the way out).
+func (app *App) With(m ...Middleware) {
+	app.middleware = append(app.middleware, m...)
 }
 
 // Use registers a typed handler for the given HTTP method and path on app.
