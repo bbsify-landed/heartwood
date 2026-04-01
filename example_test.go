@@ -17,7 +17,7 @@ type GreetRequest struct {
 	Name string `json:"name"`
 }
 
-func (r *GreetRequest) Serialize(w io.Writer) error  { return json.NewEncoder(w).Encode(r) }
+func (r *GreetRequest) Serialize(w io.Writer) error    { return json.NewEncoder(w).Encode(r) }
 func (r *GreetRequest) Deserialize(rd io.Reader) error { return json.NewDecoder(rd).Decode(r) }
 func (r *GreetRequest) Validate() error {
 	if r.Name == "" {

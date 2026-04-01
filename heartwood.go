@@ -48,7 +48,7 @@ func Use[R any, D Deserializable[R], RR Serializable](
 	app.handlers[path][method] = func(ctx context.Context, r io.Reader, w io.Writer) error {
 		req := D(new(R))
 		if err := req.Deserialize(r); err != nil {
-			return err
+			return Error(400, err)
 		}
 
 		if err := req.Validate(); err != nil {

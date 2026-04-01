@@ -122,19 +122,20 @@ func TestNewServeMux_Errors(t *testing.T) {
 			wantBodyMatch: "internal server error",
 		},
 		{
-			name:       "IO EOF",
-			method:     "POST",
-			path:       "/eof",
-			body:       `{"bar":"alice"}`,
-			wantStatus: 200, // ServeMux treats io.EOF as success (client dropped)
+			name:          "IO EOF",
+			method:        "POST",
+			path:          "/eof",
+			body:          `{"bar":"alice"}`,
+			wantStatus:    500,
+			wantBodyMatch: "internal server error",
 		},
 		{
 			name:          "Invalid Request Body",
 			method:        "POST",
 			path:          "/health",
 			body:          `{invalid}`,
-			wantStatus:    500,
-			wantBodyMatch: "internal server error",
+			wantStatus:    400,
+			wantBodyMatch: "invalid character",
 		},
 	}
 
@@ -166,6 +167,18 @@ func TestNewServeMux_SerializationError(t *testing.T) {
 	w := &failWriter{}
 
 	mux.ServeHTTP(w, r)
+}
+
+func TestEmptyBodyReturnsError(t *testing.T) {
+	app := SimpleApp()
+	mux := hw.NewServeMux(app, t.Context())
+
+	r := httptest.NewRequest("POST", "/health", http.NoBody)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, r)
+
+	assert.Equal(t, 400, w.Code, "empty body should return 400, got %d", w.Code)
+	assert.NotEmpty(t, w.Body.String(), "response body should not be empty")
 }
 
 func TestListenAndServe_Error(t *testing.T) {

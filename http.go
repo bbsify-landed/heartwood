@@ -3,7 +3,6 @@ package heartwood
 import (
 	"context"
 	"errors"
-	"io"
 	"net/http"
 
 	"github.com/bbsify-landed/clog"
@@ -27,9 +26,7 @@ func NewServeMux(app *App, ctx context.Context) *http.ServeMux {
 			err := Handle(app, ctx, r.Method, path, r.Body, w)
 
 			var hwErr *HeartwoodError
-			if err == io.EOF {
-				clog.Debug(ctx, "client dropped connection")
-			} else if err != nil {
+			if err != nil {
 				if !errors.As(err, &hwErr) {
 					clog.Error(ctx, "did not handle error", "err", err)
 					hwErr = &HeartwoodError{
