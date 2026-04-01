@@ -1,0 +1,21 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - 2026-04-01
+
+### Added
+
+- Core handler framework with generic, type-safe request/response processing
+- `Serializable` and `Deserializable` interfaces for pluggable encoding
+- `Handler` generic type for strongly-typed endpoint functions
+- `App` for registering and dispatching handlers
+- HTTP integration via `NewServeMux` and `ListenAndServe`
+- `HeartwoodError` for structured errors with HTTP status codes
+- `ClientError` for client-side error deserialization
+- Schema definition package (`pkg/schema`) with typed field builders and validation constraints
+- Code generator (`cmd/hwgen`) that produces server handlers and typed HTTP clients from schema definitions
+- CI pipeline with linting and 85%+ test coverage enforcement
