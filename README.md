@@ -26,20 +26,66 @@ Request types implement `Deserializable` (decode + validate), response types imp
 
 ## Code Generation
 
-The `hwgen` tool generates typed handlers and HTTP clients from declarative schema definitions:
+The `hwgen` tool generates typed request/response structs, validation, handler registration, and HTTP clients from declarative schema definitions.
+
+### Define a schema
 
 ```go
-var HealthCheck = &schema.Definition{
-    Method: "POST",
-    Path:   "/health",
-    ReqFields: []schema.Field{schema.String("name").Required()},
-    ResFields: []schema.Field{schema.String("status")},
-}
+package myapi
+
+import "github.com/bbsify-landed/heartwood/pkg/schema"
+
+//go:generate go run github.com/bbsify-landed/heartwood/cmd/hwgen
+
+var HealthCheck = schema.Define(
+    schema.POST("/health"),
+    schema.Request(
+        schema.String("name").Required().MinLength(1),
+        schema.Int("age").MinValue(0).MaxValue(150),
+    ),
+    schema.Response(
+        schema.String("status"),
+    ),
+)
 ```
 
+### Generate
+
 ```
-go run github.com/bbsify-landed/heartwood/cmd/hwgen ./path/to/schema
+go generate ./myapi
 ```
+
+This produces two files:
+
+- `hw_gen.go` — `HealthCheckRequest` / `HealthCheckResponse` structs with `Serialize`, `Deserialize`, `Validate` methods, plus a `RegisterHealthCheck` function
+- `hw_client_gen.go` — a typed `Client` with a `HealthCheck(ctx, req)` method
+
+### Use the generated code
+
+```go
+// Server
+app := hw.New()
+myapi.RegisterHealthCheck(app, func(ctx context.Context, req *myapi.HealthCheckRequest) (*myapi.HealthCheckResponse, error) {
+    return &myapi.HealthCheckResponse{Status: "ok"}, nil
+})
+
+// Client
+client := myapi.NewClient("http://localhost:9000")
+res, err := client.HealthCheck(ctx, &myapi.HealthCheckRequest{Name: "alice", Age: 30})
+```
+
+### Available field types
+
+| Builder | Go type | Constraints |
+|---------|---------|-------------|
+| `String(name)` | `string` | `Required`, `MinLength`, `MaxLength` |
+| `Int(name)` | `int` | `Required`, `MinValue`, `MaxValue` |
+| `Int64(name)` | `int64` | `Required`, `MinValue`, `MaxValue` |
+| `Float64(name)` | `float64` | `Required`, `MinValue`, `MaxValue` |
+| `Bool(name)` | `bool` | `Required` |
+| `Ref(name, def)` | `*T` | — |
+| `Slice(name, elemType)` | `[]T` | `MinLength`, `MaxLength` |
+| `SliceOf(name, def)` | `[]*T` | `MinLength`, `MaxLength` |
 
 ## License
 
