@@ -12,6 +12,13 @@ var HealthCheck = schema.Define(
 	),
 )
 
+var GetTime = schema.Define(
+	schema.GET("/time"),
+	schema.Response(
+		schema.String("time"),
+	),
+)
+
 var CreateUser = schema.Define(
 	schema.POST("/users"),
 	schema.Request(

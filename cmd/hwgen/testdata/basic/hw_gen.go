@@ -92,6 +92,45 @@ func RegisterCreateUser(app *heartwood.App, h CreateUserHandler) {
 	})
 }
 
+// --- GetTime ---
+
+// GetTimeRequest is the request type for GET /time.
+type GetTimeRequest struct {
+}
+
+func (r *GetTimeRequest) Serialize(w io.Writer) error {
+	return json.NewEncoder(w).Encode(r)
+}
+
+func (r *GetTimeRequest) Deserialize(rd io.Reader) error { return nil }
+
+func (r *GetTimeRequest) Validate() error { return nil }
+
+// GetTimeResponse is the response type for GET /time.
+type GetTimeResponse struct {
+	Time string `json:"time"`
+}
+
+func (r *GetTimeResponse) Serialize(w io.Writer) error {
+	return json.NewEncoder(w).Encode(r)
+}
+
+func (r *GetTimeResponse) Deserialize(rd io.Reader) error {
+	return json.NewDecoder(rd).Decode(r)
+}
+
+func (r *GetTimeResponse) Validate() error { return nil }
+
+// GetTimeHandler is the handler function type for GET /time.
+type GetTimeHandler func(ctx context.Context, req *GetTimeRequest) (*GetTimeResponse, error)
+
+// RegisterGetTime registers the GetTime handler on the given app.
+func RegisterGetTime(app *heartwood.App, h GetTimeHandler) {
+	heartwood.Use(app, "GET", "/time", func(ctx context.Context, req *GetTimeRequest) (*GetTimeResponse, error) {
+		return h(ctx, req)
+	})
+}
+
 // --- HealthCheck ---
 
 // HealthCheckRequest is the request type for POST /health.

@@ -237,9 +237,11 @@ func (r *{{ .Name }}Request) Serialize(w io.Writer) error {
 	return json.NewEncoder(w).Encode(r)
 }
 
-func (r *{{ .Name }}Request) Deserialize(rd io.Reader) error {
+{{ if .Request }}func (r *{{ .Name }}Request) Deserialize(rd io.Reader) error {
 	return json.NewDecoder(rd).Decode(r)
 }
+{{ else }}func (r *{{ .Name }}Request) Deserialize(rd io.Reader) error { return nil }
+{{ end }}
 {{ if hasValidation .Request }}
 func (r *{{ .Name }}Request) Validate() error {
 	var errs []string
