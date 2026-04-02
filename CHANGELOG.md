@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-04-01
+
+### Added
+
+- `Middleware` type and `App.With()` for registering HTTP middleware
+- `RequestLogger` middleware for structured request logging via clog
+
+### Fixed
+
+- Code generator (`hwgen`) now produces deterministic output by sorting definitions alphabetically
+
 ## [0.1.1] - 2026-04-01
 
 ### Fixed
