@@ -1,7 +1,6 @@
 package heartwood
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -32,9 +31,10 @@ func (sw *statusWriter) Write(b []byte) (int, error) {
 }
 
 // RequestLogger returns a [Middleware] that logs every request with method,
-// path, status code, and duration using clog. The provided ctx must carry a
-// clog logger (see [clog.WithLogger]).
-func RequestLogger(ctx context.Context) Middleware {
+// path, status code, and duration using clog. The logger is read from the
+// request context, so the request context must carry a clog logger
+// (see [clog.WithLogger]).
+func RequestLogger() Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
@@ -42,7 +42,7 @@ func RequestLogger(ctx context.Context) Middleware {
 
 			next.ServeHTTP(sw, r)
 
-			clog.Info(ctx, "request",
+			clog.Info(r.Context(), "request",
 				"method", r.Method,
 				"path", r.URL.Path,
 				"status", sw.status,

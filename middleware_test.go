@@ -47,18 +47,27 @@ func TestMiddlewareOrder(t *testing.T) {
 	assert.Equal(t, []string{"first-before", "second-before", "second-after", "first-after"}, order)
 }
 
+// injectLogger returns a middleware that sets the clog logger on the request context.
+func injectLogger(logger *slog.Logger) hw.Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := clog.WithLogger(r.Context(), logger)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
 func TestRequestLogger(t *testing.T) {
 	var logBuf bytes.Buffer
 	logger := slog.New(slog.NewTextHandler(&logBuf, nil))
-	ctx := clog.WithLogger(t.Context(), logger)
 
 	app := hw.New()
 	hw.Use(app, "POST", "/health", func(ctx context.Context, req *Foo) (*Baz, error) {
 		return &Baz{Ble: "bob"}, nil
 	})
-	app.With(hw.RequestLogger(ctx))
+	app.With(injectLogger(logger), hw.RequestLogger())
 
-	mux := hw.NewServeMux(app, ctx)
+	mux := hw.NewServeMux(app, t.Context())
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/health", bytes.NewBufferString(`{"bar":"alice"}`))
 	mux.ServeHTTP(w, r)
@@ -76,15 +85,14 @@ func TestRequestLogger(t *testing.T) {
 func TestRequestLoggerCapturesErrorStatus(t *testing.T) {
 	var logBuf bytes.Buffer
 	logger := slog.New(slog.NewTextHandler(&logBuf, nil))
-	ctx := clog.WithLogger(t.Context(), logger)
 
 	app := hw.New()
 	hw.Use(app, "POST", "/health", func(ctx context.Context, req *Foo) (*Baz, error) {
 		return nil, hw.Error(422, assert.AnError)
 	})
-	app.With(hw.RequestLogger(ctx))
+	app.With(injectLogger(logger), hw.RequestLogger())
 
-	mux := hw.NewServeMux(app, ctx)
+	mux := hw.NewServeMux(app, t.Context())
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/health", bytes.NewBufferString(`{"bar":"alice"}`))
 	mux.ServeHTTP(w, r)
