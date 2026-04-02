@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/format"
 	"os"
+	"sort"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -20,12 +21,19 @@ func generate(dir string, pkgName string, defs map[string]*schema.Definition) er
 		return fmt.Errorf("resolving path: %w", err)
 	}
 
+	names := make([]string, 0, len(defs))
+	for name := range defs {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
 	data := templateData{
 		Package:     pkgName,
 		Definitions: make([]defData, 0, len(defs)),
 	}
 
-	for name, def := range defs {
+	for _, name := range names {
+		def := defs[name]
 		dd := defData{
 			Name:     name,
 			Method:   def.Method,
